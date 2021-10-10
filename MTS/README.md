@@ -6,7 +6,7 @@ https://ocw.cs.pub.ro/courses/pp/21/teme/target-search
 
 ## About
 
-The aim of this project is implementing a game - **Mobile Target Search** - by using lazy search in the state space. Thus, the **A*** algorithm will be used for optimising the search.
+The aim of this project is implementing a game - **Mobile Target Search** - by using **lazy search** in the *state space*. Thus, the **A*** algorithm will be used for optimising the search.
 
 The game is set on a 2D terrain, having the following characters:
 
@@ -66,7 +66,7 @@ Testing can be done:
 > stack exec ghci --package PSQueue TestMTS.hs\
 > *TestMTS.hs> checkAll
 
-For **(2)**:
+For **(2)** (e.g.):
 
 > stack exec ghci --package PSQueue Interactive.hs\
 > *Interactive.hs> hunt True $ loadGame "terrains/terrain-1.txt" [goNorth, goSouth] [(0, 1)]

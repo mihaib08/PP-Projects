@@ -3,4 +3,4 @@
 Two of the projects developed for the **Programming Paradigms** course, as follows (per language):
 
 * *Haskell* - Mobile Target Search (MTS)
-* *Prolog* - Integrams
+* *Prolog* - Integrame

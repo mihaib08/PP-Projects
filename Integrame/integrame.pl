@@ -374,5 +374,6 @@ rezolvare(W, Solutie) :- my_sols(W, Solutii, L_qs),
                          findall((Q, R), (member((Q, Rasp), Sol), atom_chars(R, Rasp)), Solutie).
                                                     
 
+%% Helpers
 % integrama(0, W), intrebari(W, L_qs), member((_, Q1, d, _), L_qs), intersectie(W, Q1, P1, Q2, P2), Sol = (Q1, P1, Q2, P2).
 % integrama(0, W), intrebari(W, L_qs), findall((Q1, P1, Q2, P2), (member((_, Q1, d, _), L_qs), intersectie(W, Q1, P1, Q2, P2)), L).
