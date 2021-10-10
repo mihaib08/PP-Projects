@@ -76,7 +76,7 @@ nodeAction = action
 createStateSpace :: (ProblemState s a, Eq s) => s -> Node s a
 createStateSpace initialState = createSpaceHelper initialState Nothing Nothing 0 -- initialNode
 
--- createSpaceHelper :: (ProblemState s a, Eq s) => s -> Maybe a -> Maybe (Node s a) -> Int -> Node s a
+createSpaceHelper :: (ProblemState s a, Eq s) => s -> Maybe a -> Maybe (Node s a) -> Int -> Node s a
 createSpaceHelper val act prt d = currNode
             where
                 currNode = Node val 
@@ -159,16 +159,16 @@ insertSuccs node frontier visited = foldr (\x acc -> insertSucc acc x) frontier 
 
 astar' :: (ProblemState s a, Ord s) => (S.Set s) -> (PQ.PSQ (Node s a) Float) -> Node s a
 astar' visited frontier = if (isGoal currState) then currNode -- goalNode
-                                                else astar' new_vis
-                                                            new_frontier
+                                                else astar' newVis
+                                                            newFrontier
                                         where
                                             del = deleteFindMin frontier
 
                                             currNode = fst del
                                             currState = (state currNode)
 
-                                            new_vis = S.insert currState visited
-                                            new_frontier = insertSuccs currNode (snd del) new_vis
+                                            newVis = S.insert currState visited
+                                            newFrontier = insertSuccs currNode (snd del) newVis
 
 {-
     *** TODO ***
@@ -179,12 +179,12 @@ astar' visited frontier = if (isGoal currState) then currNode -- goalNode
 -}
 
 astar :: (ProblemState s a, Ord s) => Node s a -> Node s a
-astar initialNode = astar' visited frt -- goalNode
+astar initialNode = astar' visited newFrontier -- goalNode
                         where 
                             visited = S.empty
                             frontier = PQ.insert initialNode cost $ PQ.empty
 
-                            frt = insertSuccs initialNode frontier visited
+                            newFrontier = insertSuccs initialNode frontier visited
 
                             cost = (fromIntegral (depth initialNode)) +
                                    (hst initialNode)
@@ -203,6 +203,6 @@ extractPath goalNode = reverse $ map (\(act, node) -> (act, state node)) nodes
                             where
                                 cond = not . isNothing . parent . snd
                                 nodes = takeWhile cond $ 
-                                                  iterate (\(act, node) -> (fromJust $ action node, 
+                                                  iterate (\(_, node) -> (fromJust $ action node,
                                                                             fromJust $ parent node)) 
                                                   (fromJust $ action goalNode, goalNode)

@@ -111,21 +111,20 @@ instance Show Game where
 emptyGame :: Int -> Int -> Game
 emptyGame l c = (Game l
                      c
-                     (bld 0 c)
-                     (1, 1)
+                     (build 0 c) -- build the board starting from
+                                 -- line 0 and having c columns
+                     (1, 1) -- hunter initial coordinates
                      []
                      [])
                      where
-                         nl = l
-
-                         bld :: Int -> Int -> [[Char]]
-                         bld 0 m = (getObs m) : (bld 1 m)
-                         bld 1 m = ("@!" ++ (getEmpt (m - 3)) ++ "@") : (bld 2 m)
-                         bld k m = if (k == nl - 1) then [getObs m]
-                                                else ("@" ++ (getEmpt (m - 2)) ++ "@") : (bld (k + 1) m)
+                         build :: Int -> Int -> [[Char]]
+                         build 0 m = (getObstacles m) : (build 1 m)
+                         build 1 m = ("@!" ++ (getEmpty (m - 3)) ++ "@") : (build 2 m)
+                         build k m = if (k == l - 1) then [getObstacles m]
+                                                else ("@" ++ (getEmpty (m - 2)) ++ "@") : (build (k + 1) m)
                          
-                         getObs ct = replicate ct '@'
-                         getEmpt ct = replicate ct ' '
+                         getObstacles ct = replicate ct '@'
+                         getEmpty ct = replicate ct ' '
                     
 
 {-
@@ -147,8 +146,8 @@ getElem (x, y) b = head $ drop y $ take (y + 1) line
                                 line = head $ drop x $ take (x + 1) b
 
 posHunter :: Position -> Position -> Position
-posHunter curr_pos pos = if (pos == curr_pos) then (-1, -1) -- se suprapune
-                                              else curr_pos
+posHunter currPos pos = if (pos == currPos) then (-1, -1) -- se suprapune
+                                              else currPos
 
 placeElem :: [Char] -> Position -> [[Char]] -> [[Char]]
 placeElem c (x, y) b = take x b ++
@@ -156,25 +155,26 @@ placeElem c (x, y) b = take x b ++
                            drop (x + 1) b
                                 where
                                     line = head $ drop x $ take (x + 1) b
-                                    getPos p curr_line = [take y curr_line ++
+                                    getPos p currLine = [take y currLine ++
                                                           p ++
-                                                          drop (y + 1) curr_line]
+                                                          drop (y + 1) currLine]
 
 addHunterHelper :: Position -> Game -> Game
-addHunterHelper pos g = if (pos_elem == ' ') then g {
+addHunterHelper pos g = if (posElem == ' ') then g {
                                                 hunter = pos,
-                                                board = if (curr_hunter == (-1, -1))
+                                                board = if (currHunter == (-1, -1)) -- the hunter is not
+                                                                                    -- currently on the board
                                                         then placeElem "!"
                                                                   pos
                                                                   (board g)
                                                         else placeElem "!"
                                                                   pos
-                                                                  (placeElem " " curr_hunter (board g))
+                                                                  (placeElem " " currHunter (board g))
                                               }
                                        else g
                                 where
-                                    pos_elem = getElem pos (board g)
-                                    curr_hunter = hunter g
+                                    posElem = getElem pos (board g)
+                                    currHunter = hunter g
 
 addHunter :: Position -> Game -> Game
 addHunter pos g = if (validPos n m pos) then addHunterHelper pos g
@@ -195,14 +195,14 @@ addHunter pos g = if (validPos n m pos) then addHunterHelper pos g
 
 addTargetHelper :: Target -> Position -> Game -> Game
 addTargetHelper tgt pos g = g {
-                                hunter = posHunter h_pos pos,
+                                hunter = posHunter hPos pos,
                                 targets = tgt : (targets g),
                                 board = placeElem "*"
                                 pos
                                 (board g)
                               }
                                     where
-                                        h_pos = hunter g
+                                        hPos = hunter g
 
 
 addTarget :: Behavior -> Position -> Game -> Game
@@ -223,30 +223,28 @@ addTarget bh pos g = if (validPos n m pos) then addTargetHelper tgt pos g
 -}
 
 getHunterPos :: Position -> Position -> Position -> Position
-getHunterPos curr_pos p1 p2 = if (p1 == curr_pos || p2 == curr_pos) then (-1, -1)
-                                                                    else curr_pos
+getHunterPos currPos p1 p2 = if (p1 == currPos || p2 == currPos) then (-1, -1)
+                                                                    else currPos
 
 addGatewayHelper :: Position -> Position -> Game -> Game
-addGatewayHelper g_in g_out g = g {
-                                    hunter = getHunterPos h_pos g_in g_out,
-                                    gateways = (g_out, g_in) : (g_in, g_out)
+addGatewayHelper gIn gOut g = g {
+                                    hunter = getHunterPos hPos gIn gOut,
+                                    gateways = (gOut, gIn) : (gIn, gOut)
                                                              : (gateways g),
                                     board = placeElem "#"
-                                                      g_out
+                                                      gOut
                                                       placeIn
                                   }
                                             where
                                                 b = board g
-
-                                                h_pos = hunter g
-
-                                                placeIn = placeElem "#" g_in b
+                                                hPos = hunter g
+                                                placeIn = placeElem "#" gIn b
 
 addGateway :: (Position, Position) -> Game -> Game
-addGateway (gate_in, gate_out) g = if ((validPos n m gate_in) &&
-                                        (validPos n m gate_out)) then addGatewayHelper gate_in
-                                                                                          gate_out
-                                                                                          g
+addGateway (gateIn, gateOut) g = if ((validPos n m gateIn) &&
+                                        (validPos n m gateOut)) then addGatewayHelper gateIn
+                                                                                       gateOut
+                                                                                       g
                                                                  else g
                                                     where
                                                         n = nL g
@@ -262,13 +260,13 @@ addGateway (gate_in, gate_out) g = if ((validPos n m gate_in) &&
 
 addObstacleHelper :: Position -> Game -> Game
 addObstacleHelper pos g = g {
-                                hunter = posHunter h_pos pos,
+                                hunter = posHunter hPos pos,
                                 board = placeElem "@"
                                                   pos
                                                   (board g)
                             }
                                     where
-                                        h_pos = hunter g
+                                        hPos = hunter g
 
 addObstacle :: Position -> Game -> Game
 addObstacle pos g = if (validPos n m pos) then addObstacleHelper pos g
@@ -292,19 +290,19 @@ addObstacle pos g = if (validPos n m pos) then addObstacleHelper pos g
 
 getOutGate :: Position -> [(Position, Position)] -> Maybe Position
 getOutGate _ [] = Nothing
-getOutGate pos (gate : gates) = if (g_in == pos) then (Just g_out)
+getOutGate pos (gate : gates) = if (gIn == pos) then (Just gOut)
                                                  else getOutGate pos gates
                                             where
-                                                g_in = fst gate
-                                                g_out = snd gate
+                                                gIn = fst gate
+                                                gOut = snd gate
 
 attemptMove :: Position -> Game -> Maybe Position
-attemptMove pos g = if (pos_elem == '@') then Nothing
+attemptMove pos g = if (posElem == '@') then Nothing
                                          else
-                                             if (pos_elem == '#') then getOutGate pos gates
+                                             if (posElem == '#') then getOutGate pos gates
                                                                   else (Just pos)
                                                     where
-                                                        pos_elem = getElem pos b
+                                                        posElem = getElem pos b
                                                         b = board g
                                                         gates = gateways g
 
@@ -407,8 +405,8 @@ bounce d pos@(x, y) g = if ((validPos n m dst) && not(isObstacle dst b)) then ch
                                                                                         (bounce d)
                                                                                         g
                                                                          else
-                                                                             if (not(isObstacle dst_aux b)) then checkGate dst_aux
-                                                                                                                           (bounce rev_d)
+                                                                             if (not(isObstacle dstAux b)) then checkGate dstAux
+                                                                                                                           (bounce revD)
                                                                                                                            g
                                                                                                             else checkGate pos
                                                                                                                            (bounce d)
@@ -419,9 +417,9 @@ bounce d pos@(x, y) g = if ((validPos n m dst) && not(isObstacle dst b)) then ch
                                                             b = board g
 
                                                             dst = (x + d, y)
-                                                            dst_aux = (x - d, y)
+                                                            dstAux = (x - d, y)
 
-                                                            rev_d = -d
+                                                            revD = -d
 
 {-
     *** TODO ***
@@ -434,35 +432,35 @@ bounce d pos@(x, y) g = if ((validPos n m dst) && not(isObstacle dst b)) then ch
 -- updateBoard :: [Target] -> Board -> new_Board
 updateBoard :: [Target] -> [[Char]] -> [[Char]]
 updateBoard [] b = b
-updateBoard (t : ts) b = updateBoard ts new_b
+updateBoard (t : ts) b = updateBoard ts newBoard
                             where
-                                new_b = placeElem "*"
-                                                  (position t)
-                                                   b
+                                newBoard = placeElem "*"
+                                                     (position t)
+                                                     b
 
 redoBoard :: [Target] -> [[Char]] -> [(Position, Position)] -> [[Char]]
 redoBoard [] b _ = b
-redoBoard (t : ts) b gates = redoBoard ts new_b gates
+redoBoard (t : ts) b gates = redoBoard ts newBoard gates
                             where
-                                pos_t = position t
-                                new_b = if (isGateway pos_t gates) then placeElem "#"
-                                                                                  pos_t
-                                                                                  b
-                                                                   else placeElem " "
-                                                                                  pos_t
-                                                                                  b
+                                posTarget = position t
+                                newBoard = if (isGateway posTarget gates) then placeElem "#"
+                                                                                posTarget
+                                                                                b
+                                                                          else placeElem " "
+                                                                                posTarget
+                                                                                b
 
 moveTargets :: Game -> Game
 moveTargets g = g { 
-                    board = updateBoard new_targets (redoBoard curr_targets b gates),
-                    targets = new_targets
+                    board = updateBoard newTargets (redoBoard currTargets b gates),
+                    targets = newTargets
                   }
                     where
                         b = board g
-                        curr_targets = targets g
+                        currTargets = targets g
                         gates = gateways g
 
-                        new_targets = map (\t -> (behavior t) (position t) g) curr_targets
+                        newTargets = map (\t -> (behavior t) (position t) g) currTargets
 
 {-
     *** TODO ***
@@ -513,15 +511,15 @@ moveHunterHelper :: Position -> Position -> Game -> Game
 moveHunterHelper src dst g = g {
                                  board = placeElem "!"
                                                     dst
-                                                    new_b,
+                                                    newBoard,
                                  hunter = dst
                                }
                             where
                                 b = board g
-                                new_b = if (isGateway src gates) then placeElem "#"
+                                newBoard = if (isGateway src gates) then placeElem "#"
                                                                                 src
                                                                                 b
-                                                                 else placeElem " "
+                                                                    else placeElem " "
                                                                                 src
                                                                                 b
                                 gates = gateways g
@@ -532,22 +530,22 @@ moveHunter src dst g = case dst of
     Just pos -> moveHunterHelper src pos g
 
 imgMove :: Position -> Position -> Game -> Game
-imgMove src dst g = if (validPos n m dst) then moveHunter src next_dst g
+imgMove src dst g = if (validPos n m dst) then moveHunter src nextDst g
                                           else g
                                     where
                                         n = nL g
                                         m = nC g
 
-                                        next_dst = attemptMove dst g
+                                        nextDst = attemptMove dst g
 
 delTarget :: Position -> [Target] -> [Target]
 delTarget _ [] = []
-delTarget tpos (t : ts) = if (tpos == (position t)) then ts
-                                                    else t : (delTarget tpos ts)
+delTarget tPos (t : ts) = if (tPos == (position t)) then ts
+                                                    else t : (delTarget tPos ts)
 
 delAdjacent :: Position -> Game -> Game
 delAdjacent pos g = g {
-                        board = new_b,
+                        board = newBoard,
                         targets = delTarget pos ts
                       }
                       where
@@ -557,7 +555,7 @@ delAdjacent pos g = g {
                           gates = gateways g
                           b = board g
 
-                          new_b = if ((validPos n m pos) && not(isObstacle pos b)) then 
+                          newBoard = if ((validPos n m pos) && not(isObstacle pos b)) then 
                                                     if (isGateway pos gates) then placeElem "#"
                                                                                   pos
                                                                                   b
@@ -575,28 +573,27 @@ elimTargets g = delAdjacent (hx, hy - 1) $
                             (hx, hy) = hunter g
 
 realMove :: Position -> Position -> Game -> Game
-realMove src dst g = if (validPos n m dst) then elimTargets new_g
+realMove src dst g = if (validPos n m dst) then elimTargets newGame
                                            else elimTargets g
                                     where
                                         n = nL g
                                         m = nC g
 
-                                        next_dst = attemptMove dst g
+                                        nextDst = attemptMove dst g
 
-                                        new_g = moveHunter src next_dst g
+                                        newGame = moveHunter src nextDst g
 
 moveProc :: Position -> Position -> Game -> Game
-moveProc src dst g = elimTargets (moveTargets new_g)
+moveProc src dst g = elimTargets (moveTargets newGame)
                         where
-                            new_g = realMove src dst g -- ?? g / elimTargets g
+                            newGame = realMove src dst g
 
 advanceGameState :: Direction -> Bool -> Game -> Game
-advanceGameState dir ok g = if (ok == False) then imgMove hpos dst g
-                                             else moveProc hpos dst g
+advanceGameState dir ok g = if (ok == False) then imgMove hPos dst g
+                                             else moveProc hPos dst g
                                         where
-                                            dst = getDirection hpos dir
-
-                                            hpos = hunter g
+                                            dst = getDirection hPos dir
+                                            hPos = hunter g
 
 {-
     ***  TODO ***
@@ -619,9 +616,9 @@ areTargetsLeft g = length (targets g) > 0
 
 -- Behavior = Position -> Game -> Target
 circle :: Position -> Int -> Behavior
-circle cpos r pos g = createTarget next_pos (circle cpos r)
+circle currPos r pos _ = createTarget nextPos (circle currPos r)
                         where
-                            next_pos = getNextPos cpos pos
+                            nextPos = getNextPos currPos pos
 
                             getNextPos (cx, cy) (x, y) 
                                 | y == cy  = if (cx > x) then (x + r, cy - r)
@@ -659,9 +656,9 @@ instance ProblemState Game Direction where
         Euristica euclidiană (vezi hEuclidian mai jos) până la Target-ul ales
         de isGoal.
     -}
-    h g = captureTarget hpos ts
+    h g = captureTarget hPos ts
             where
-                hpos = hunter g
+                hPos = hunter g
                 ts = targets g
 
                 captureTarget _ [] = 0.0
@@ -717,9 +714,9 @@ instance ProblemState BonusGame Direction where
 
         Hint: Folosiți funcția isGoal deja implementată pentru tipul Game.
     -}
-    isGoal (BonusGame g) = foldr (\t acc -> (isTargetKilled hpos t) || acc) False ts
+    isGoal (BonusGame g) = foldr (\t acc -> (isTargetKilled hPos t) || acc) False ts
                                 where
-                                    hpos = hunter g
+                                    hPos = hunter g
                                     ts = targets g
 
     {-
@@ -737,14 +734,11 @@ instance ProblemState BonusGame Direction where
                 hpos = hunter g
                 ts = targets g
 
-                -- captureTarget _ [] mini = mini
-                -- captureTarget pos (x : xs) mini = if ((myH pos (position x)) < mini) then captureTarget pos xs (myH pos (position x))
-                --                                                                      else captureTarget pos xs mini
-                captureTarget pos xs = minimum $ map ((myH pos) . position) xs
+                captureTarget pos xs = minimum $ map ((hGates pos) . position) xs
 
-                myH pos1 pos2 = throughGates pos1 pos2 (hEuclidean pos1 pos2) (gateways g)
+                hGates pos1 pos2 = throughGates pos1 pos2 (hEuclidean pos1 pos2) (gateways g)
                 
-                throughGates p1 p2 mini [] = mini
+                throughGates _ _ mini [] = mini
                 throughGates p1 p2 mini (gt : gts)
                         | mini < getThrough = throughGates p1 p2 mini gts
                         | otherwise = throughGates p1 p2 getThrough gts
