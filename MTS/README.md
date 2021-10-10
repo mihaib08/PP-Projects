@@ -37,8 +37,8 @@ In this project, the usage of the **A\*** algorithm is as an **informed search a
 
 - a **tree** of paths having a *start* node and **extending** those paths by a criterion;
 - a **heuristic**, for *prioritising* the targets.
-    - at first, it is the euclidean distance between two points
-    - the latter is improved by taking the **gateways** into account when calculating the distance
+    - at first, it is the euclidean distance between two points *@Game*
+    - the latter is improved by taking the **gateways** into account when calculating the distance *@BonusGame*
 
 This way, a **priority** queue is being used, both for *prioritising* the expansion of the more "promising" nodes, and also for the possibility of reintroducing the nodes in the queue (also known as *frontier*).
 
@@ -49,6 +49,10 @@ The game **components** and **display**, as well as the characters' **definition
 *ProblemState.hs* contains the class which generically interfaces the functions for generating the state space.
 
 In *Search.hs* the **Node s a** data type is defined, needed for representing the state space. This file also contains the **A\* algorithm** implementation, being divided in several functions for keeping track of the nodes added and erased from the priority queue.
+
+### Game vs. BonusGame
+
+*BonusGame* is just a **wrapper** of *Game*, which uses a better heuristic. It is needed because there cannot be two instances of the same class for the same type, *Game*.
 
 ## Testing
 

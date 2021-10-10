@@ -1,8 +1,3 @@
-## MTS
-
-- [x] README
-- [ ] Code++
-
 ## Integrams
 
 - [ ] README
