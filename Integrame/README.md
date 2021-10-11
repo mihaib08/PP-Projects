@@ -21,25 +21,26 @@ A **question** is represented by:
 
 In the program, a crossword puzzle is described by the **predicate** `integ(H, W, L, Voc)` **(\*)**, where:
 
-- H = the *height* of the puzzle;
-- W = the *width*  of the puzzle;
-- L = *list* of cells (black or filled in);
-- Voc = the puzzle's **vocabulary**, i.e. the list of words that can be used to fill in the crossword.
+- **H** = the *height* of the puzzle;
+- **W** = the *width*  of the puzzle;
+- **L** = *list* of cells (black or filled in);
+- **Voc** = the puzzle's **vocabulary**, i.e. the list of words that can be used to fill in the crossword.
 
 ## Implementation
 
-The aim of the program (*integrame.pl*) is to find the possible solutions for a given crossword puzzle. This is being solved by the predicate `rezolva(W, Solutie)`, where *W* is an integram having the form described in **(\*)**, and *Solutie* is a list of pairs **(Q, A)**:
+The aim of the program (*integrame.pl*) is to find the possible solutions for a given crossword puzzle. This is being solved by the predicate `rezolva(W, Solutie)`, where *W* is a puzzle having the form described in **(\*)**, and *Solutie* is a list of pairs **(Q, A)**:
 - **Q** - the question text
 - **A** - the answer
 
 Solving the *rezolva()* predicate is done by dividing the problem into several *sub*predicates, as follows:
 
-- *intrebari/2*, which gets a list of the questions of a puzzle;
-- *id_intrebare/3*, which gets the identifier of a question
-- *completare/3*, which fills the crossword with the answers to the questions
+- *intrebari/2*, which collects the list of questions in a given puzzle;
+- *id_intrebare/3*, which finds the identifier of a question
+- *completare/3*, which fills the crossword with the answers to its questions
 
-- *lungime_spatiu/3*, which finds the length of a possible answer to a given question
+- *lungime_spatiu/3*, which finds the length of the answer to a given question
 - *intersectie/5*, which determines the intersection cell of two given questions
+
 - *solutii_posibile/2*, which finds, for each question, a list of words that are possible solutions
 
 ## Utils
@@ -56,6 +57,5 @@ Solving the *rezolva()* predicate is done by dividing the problem into several *
 
 The program can be automatically tested by running the following commands:
 
-> swipl integrame.pl\
+> $ swipl integrame.pl\
 ?- vmcheck.
-

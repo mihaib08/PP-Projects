@@ -53,26 +53,28 @@
 % anumită integramă.
 intrebari(integ(_, _, [], _), []).
 
-intrebari(integ(H, W, [((R, C), [(Text, Dir, Id) | Qs]) | T], Vocab), [((R, C), Text, Dir, Id) | L_qs]) :- 
-                                              intrebari(integ(H, W, [((R, C), Qs) | T], Vocab), L_qs), !.
+intrebari(integ(H, W, [((R, C), [(Text, Dir, Id) | Qs]) | T], Vocab), [((R, C), Text, Dir, Id) | L_qs])
+                                            :- intrebari(integ(H, W, [((R, C), Qs) | T], Vocab), L_qs), !.
 
-intrebari(integ(H, W, [((_, _), []) | T], Vocab), L_qs) :- 
-                                                intrebari(integ(H, W, T, Vocab), L_qs), !.
+intrebari(integ(H, W, [((_, _), []) | T], Vocab), L_qs)
+              :- intrebari(integ(H, W, T, Vocab), L_qs), !.
 
-intrebari(integ(H, W, [((_, _), _) | T], Vocab), L_qs) :- intrebari(integ(H, W, T, Vocab), L_qs), !.
+intrebari(integ(H, W, [((_, _), _) | T], Vocab), L_qs)
+             :- intrebari(integ(H, W, T, Vocab), L_qs), !.
 
 % id_intrebare/2
 % id_intrebare(+Integ, ?Intrebare, ?Q_ID)
 % Este adevărat dacă în integrama reprezentată ca integ(...), Intrebare
 % este un text iar Q_ID este un identificator care corespund aceleași
 % întrebări.
-id_in_intrebari([], _, _) :- fail, !.
+id_intrebare(integ(H, W, L, Vocab), 
+             Q, 
+             Id) :- intrebari(integ(H, W, L, Vocab), L_qs),
+                    id_in_intrebari(L_qs, Q, Id).
+
+id_in_intrebari([], _, _) :- fail, !. % nu mai sunt intrebari in lista
 id_in_intrebari([((_, _), Q, _, Id) | _], Q, Id).
 id_in_intrebari([_ | L_qs], Q, Id) :- id_in_intrebari(L_qs, Q, Id).
-
-id_intrebare(integ(H, W, L, Vocab), 
-            Q, 
-            Id) :- intrebari(integ(H, W, L, Vocab), L_qs), id_in_intrebari(L_qs, Q, Id).
 
 % completare/3
 % completare(+Integ, +Sol, -Integrama)
@@ -90,28 +92,6 @@ id_intrebare(integ(H, W, L, Vocab),
 % Puteți testa manual predicatul cu o interogare de forma:
 % integrama(0, W), solutie(0, Sol), completare(W, Sol, W2),
 %   print_integrama(W2).
-gaseste_intrebare([], _, _) :- fail, !.
-gaseste_intrebare([((R, C), Q, Dir, Id) | _], Q, ((R, C), Q, Dir, Id)).
-gaseste_intrebare([_ | L_qs], Q, ((R, C), Q, Dir, Id)) :- gaseste_intrebare(L_qs, Q, ((R, C), Q, Dir, Id)).
-
-adauga_raspuns(Integ, [], _, Integ).
-
-adauga_raspuns(Integ, [Car | Cs], ((R, C), Q, j, Id), Sol_Integ) :- Rj is R + 1, 
-                                                                    adauga_raspuns(Integ, Cs, ((Rj, C), Q, j, Id), integ(H, W, L, Vocab)),
-                                                                    \+member(((Rj, C), Car), L),
-                                                                    Sol_Integ = integ(H, W, [((Rj, C), Car) | L], Vocab).
-adauga_raspuns(Integ, [_ | Cs], ((R, C), Q, j, Id), Sol_Integ) :-   Rj is R + 1, 
-                                                                    adauga_raspuns(Integ, Cs, ((Rj, C), Q, j, Id), Curr_Integ),
-                                                                    Sol_Integ = Curr_Integ.
-
-adauga_raspuns(Integ, [Car | Cs], ((R, C), Q, d, Id), Sol_Integ) :- Cd is C + 1, 
-                                                                    adauga_raspuns(Integ, Cs, ((R, Cd), Q, d, Id), integ(H, W, L, Vocab)),
-                                                                    \+member(((R, Cd), Car), L),
-                                                                    Sol_Integ = integ(H, W, [((R, Cd), Car) | L], Vocab).
-adauga_raspuns(Integ, [_ | Cs], ((R, C), Q, d, Id), Sol_Integ) :- Cd is C + 1, 
-                                                                    adauga_raspuns(Integ, Cs, ((R, Cd), Q, d, Id), Curr_Integ),
-                                                                    Sol_Integ = Curr_Integ.
-
 completare(Integ, [], Integ).
 
 completare(integ(H, W, L, Vocab),
@@ -125,6 +105,36 @@ completare(integ(H, W, L, Vocab),
                        completare(integ(H, W, L, Vocab), Sol, Curr_Integ),
 
                        adauga_raspuns(Curr_Integ, R_list, ((R, C), Q, Dir, Id), S_Integ), !.
+
+%% gaseste intrebarea cautata in lista de intrebari
+gaseste_intrebare([], _, _) :- fail, !.
+gaseste_intrebare([((R, C), Q, Dir, Id) | _], Q, ((R, C), Q, Dir, Id)).
+
+gaseste_intrebare([_ | L_qs], Q, ((R, C), Q, Dir, Id)) 
+   :- gaseste_intrebare(L_qs, Q, ((R, C), Q, Dir, Id)).
+
+%% adauga raspunsul la fiecare intrebare
+adauga_raspuns(Integ, [], _, Integ).
+
+
+adauga_raspuns(Integ, [Car | Cs], ((R, C), Q, j, Id), Sol_Integ) :- Rj is R + 1, 
+                                                                    adauga_raspuns(Integ, Cs, ((Rj, C), Q, j, Id), integ(H, W, L, Vocab)),
+                                                                    \+member(((Rj, C), Car), L),
+                                                                    Sol_Integ = integ(H, W, [((Rj, C), Car) | L], Vocab).
+
+adauga_raspuns(Integ, [_ | Cs], ((R, C), Q, j, Id), Sol_Integ) :-   Rj is R + 1, 
+                                                                    adauga_raspuns(Integ, Cs, ((Rj, C), Q, j, Id), Curr_Integ),
+                                                                    Sol_Integ = Curr_Integ.
+
+
+adauga_raspuns(Integ, [Car | Cs], ((R, C), Q, d, Id), Sol_Integ) :- Cd is C + 1, 
+                                                                    adauga_raspuns(Integ, Cs, ((R, Cd), Q, d, Id), integ(H, W, L, Vocab)),
+                                                                    \+member(((R, Cd), Car), L),
+                                                                    Sol_Integ = integ(H, W, [((R, Cd), Car) | L], Vocab).
+
+adauga_raspuns(Integ, [_ | Cs], ((R, C), Q, d, Id), Sol_Integ) :- Cd is C + 1, 
+                                                                    adauga_raspuns(Integ, Cs, ((R, Cd), Q, d, Id), Curr_Integ),
+                                                                    Sol_Integ = Curr_Integ.
 
 % lungime_spatiu/3
 % lungime_spatiu(integ(+H, +W, +Lista, +Vocab), +Intrebare, -Lungime)
@@ -140,13 +150,25 @@ completare(integ(H, W, L, Vocab),
 % întrebare.
 % Puteți testa manual predicatul cu o interogare de forma:
 % integrama(0, W), id_intrebare(W, Text, 3), lungime_spatiu(W, Text, X).
+lungime_spatiu(integ(H, W, L, Vocab), 
+               Intrebare, 
+               Lung) :- intrebari(integ(H, W, L, Vocab), L_qs),
+                        gaseste_intrebare(L_qs, 
+                                          Intrebare,
+                                          ((R, C), Q, Dir, Id)),
+                        parcurge_spatiu(integ(H, W, L, Vocab), ((R, C), Q, Dir, Id), Curr_Lung),
+                        Lung is Curr_Lung.
+
+%% parcurge integrama celula cu celula in functie de *directie*
 parcurge_spatiu(integ(_, _, L, _),
-                ((R, C), _, j, _),
-                0) :- Rj is R + 1, (member(((Rj, C), x), L); member(((Rj, C), [_|_]), L)), !. % am ajuns la capat
+                ((R, C), _, j, _), 0) :- Rj is R + 1,
+                                         (member(((Rj, C), x), L);
+                                          member(((Rj, C), [_|_]), L)), !. % am ajuns la capat
 
 parcurge_spatiu(integ(_, _, L, _),
-                ((R, C), _, d, _),
-                0) :- Cd is C + 1, (member(((R, Cd), x), L); member(((R, Cd), [_|_]), L)), !. % am ajuns la capat
+                ((R, C), _, d, _), 0) :- Cd is C + 1,
+                                         (member(((R, Cd), x), L); 
+                                          member(((R, Cd), [_|_]), L)), !. % am ajuns la capat
 
 parcurge_spatiu(Integ,
                 ((R, C), Q, j, Id),
@@ -154,7 +176,7 @@ parcurge_spatiu(Integ,
                            parcurge_spatiu(Integ, 
                                            ((Rj, C), Q, j, Id),
                                            Curr_lg),
-                            Sol_lg is 1 + Curr_lg, !.
+                           Sol_lg is 1 + Curr_lg, !.
 
 parcurge_spatiu(Integ,
                 ((R, C), Q, d, Id),
@@ -162,16 +184,7 @@ parcurge_spatiu(Integ,
                            parcurge_spatiu(Integ, 
                                            ((R, Cd), Q, d, Id),
                                            Curr_lg),
-                            Sol_lg is 1 + Curr_lg, !.
-
-lungime_spatiu(integ(H, W, L, Vocab), 
-               Intrebare, 
-               Lung) :- intrebari(integ(H, W, L, Vocab), L_qs),
-                        gaseste_intrebare(L_qs, 
-                                         Intrebare,
-                                         ((R, C), Q, Dir, Id)),
-                        parcurge_spatiu(integ(H, W, L, Vocab), ((R, C), Q, Dir, Id), Curr_Lung),
-                        Lung is Curr_Lung.
+                           Sol_lg is 1 + Curr_lg, !.
 
 % intersectie/5
 % intersectie(integ(+H, +W, +Lista, +Voc), +I1, -Poz1, +I2, -Poz2)
@@ -193,6 +206,34 @@ lungime_spatiu(integ(H, W, L, Vocab),
 %  Întrebările 'Primii 3 din artă' și 'Afirmativ' (3, respectiv 1) se
 %  intersectează la pozițiile 0, respectiv 2 (va fi litera A, de la
 %  ART, respectiv DA).
+intersectie(integ(H, W, L, Vocab), 
+            I1, 
+            P1, 
+            I2, 
+            P2) :- intrebari(integ(H, W, L, Vocab), L_qs),
+                   gaseste_intrebare(L_qs, 
+                                     I1,
+                                     ((R1, C1), Q1, Dir1, Id1)),
+                   gaseste_intrebare(L_qs, 
+                                     I2,
+                                     ((R2, C2), Q2, Dir2, Id2)),
+
+                   parcurge_spatiu(integ(H, W, L, Vocab), ((R1, C1), Q1, Dir1, Id1), L1),
+                   parcurge_spatiu(integ(H, W, L, Vocab), ((R2, C2), Q2, Dir2, Id2), L2),
+
+                   intersecteaza_intrebari(((R1, C1), Dir1), L1,
+                                           ((R2, C2), Dir2), L2,
+                                            (R, C)),
+
+                   gaseste_index(((R1, C1), Dir1), (R, C), P01),
+                   gaseste_index(((R2, C2), Dir2), (R, C), P02),
+
+                   P1 is P01,
+                   P2 is P02.
+
+%% gaseste coordonatele intersectiei a doua intrebari in functie de:
+%%    > directie
+%%    > coordonatele intrebarilor
 intersecteaza_intrebari(((R1, C1), d),
                         L1,
 
@@ -217,56 +258,35 @@ intersecteaza_intrebari(((R1, C1), j),
                                      (R2 - R1 =< L1),
                                      (R2 - R1 > 0).
 
+%% gaseste indexul unei celule in raspunsul unei intrebari in functie de:
+%%    > directia intrebarii 
 gaseste_index(((R, _), j), (Rx, _), Pos) :- Pos is Rx - R - 1.
 gaseste_index(((_, C), d), (_, Cy), Pos) :- Pos is Cy - C - 1.
 
-intersectie(integ(H, W, L, Vocab), 
-            I1, 
-            P1, 
-            I2, 
-            P2) :- intrebari(integ(H, W, L, Vocab), L_qs),
-                   gaseste_intrebare(L_qs, 
-                                     I1,
-                                     ((R1, C1), Q1, Dir1, Id1)),
-                   gaseste_intrebare(L_qs, 
-                                     I2,
-                                     ((R2, C2), Q2, Dir2, Id2)),
 
-                  parcurge_spatiu(integ(H, W, L, Vocab), ((R1, C1), Q1, Dir1, Id1), L1),
-                  parcurge_spatiu(integ(H, W, L, Vocab), ((R2, C2), Q2, Dir2, Id2), L2),
+%% *analog* cu _intersectie/5_, numai ca se primeste ca parametru
+%% parametrul L_qs, care specifica lista de intrebari ale integramei
+intersectie_cu_intrebari(Integ,
+                         L_qs,
+                         I1, 
+                         P1, 
+                         I2, 
+                         P2) 
+                :- member(((R1, C1), I1, Dir1, Id1), L_qs),
+                   member(((R2, C2), I2, Dir2, Id2), L_qs),
 
-                  intersecteaza_intrebari(((R1, C1), Dir1), L1,
-                                          ((R2, C2), Dir2), L2,
-                                          (Rx, Cy)),
+                   parcurge_spatiu(Integ, ((R1, C1), I1, Dir1, Id1), L1),
+                   parcurge_spatiu(Integ, ((R2, C2), I2, Dir2, Id2), L2),
 
-                  gaseste_index(((R1, C1), Dir1), (Rx, Cy), P11),
-                  gaseste_index(((R2, C2), Dir2), (Rx, Cy), P22),
+                   intersecteaza_intrebari(((R1, C1), Dir1), L1,
+                                           ((R2, C2), Dir2), L2,
+                                            (Rx, Cy)),
 
-                  P1 is P11,
-                  P2 is P22.
+                   gaseste_index(((R1, C1), Dir1), (Rx, Cy), P01),
+                   gaseste_index(((R2, C2), Dir2), (Rx, Cy), P02),
 
-my_intersect(Integ,
-            L_qs,
-            I1, 
-            P1, 
-            I2, 
-            P2) :-
-
-                  member(((R1, C1), I1, Dir1, Id1), L_qs),
-                  member(((R2, C2), I2, Dir2, Id2), L_qs),
-
-                  parcurge_spatiu(Integ, ((R1, C1), I1, Dir1, Id1), L1),
-                  parcurge_spatiu(Integ, ((R2, C2), I2, Dir2, Id2), L2),
-
-                  intersecteaza_intrebari(((R1, C1), Dir1), L1,
-                                          ((R2, C2), Dir2), L2,
-                                          (Rx, Cy)),
-
-                  gaseste_index(((R1, C1), Dir1), (Rx, Cy), P11),
-                  gaseste_index(((R2, C2), Dir2), (Rx, Cy), P22),
-
-                  P1 is P11,
-                  P2 is P22.
+                   P1 is P01,
+                   P2 is P02.
 
 % solutii_posibile/2
 % solutii_posibile(integ(+H, +W, +Lista, +Vocabular), -Solutii)
@@ -283,11 +303,17 @@ my_intersect(Integ,
 % ('Afirmativ', [['D', 'A'], ['N', 'U']])
 % ('Din care plouă',
 % [['N','O','R'],['A','R','T'],['U','I','T'],['D','O','I']])
+solutii_posibile(integ(H, W, L, Vocab), Sols) :- intrebari(integ(H, W, L, Vocab), L_qs),
+                                             cauta_cuvinte(integ(H, W, L, Vocab), L_qs, Sols).
+
+%% verifica, pentru fiecare cuvant din vocabular, daca are lungimea LQ
 verif_posibil_rasp(_, [], []).
 verif_posibil_rasp(LQ, [Cuv | Vocab], [R | Sol]) :- atom_chars(Cuv, R), length(R, LQ), !, verif_posibil_rasp(LQ, Vocab, Sol).
 verif_posibil_rasp(LQ, [_ | Vocab], Sol) :- verif_posibil_rasp(LQ, Vocab, Sol).
 
-
+%% genereaza o lista de perechi (Q, Rasp), unde:
+%%    > Q - o intrebare din integrama
+%%    Rasp - un posibil raspuns la intrebarea Q
 cauta_cuvinte(integ(_, _, _, _), [], []).
 cauta_cuvinte(integ(H, W, L, Vocab), [((R, C), Q, Dir, Id) | L_qs], [(Q, Rasp) | Sols]) :- parcurge_spatiu(integ(H, W, L, Vocab),
                                                                                                           ((R, C), Q, Dir, Id),
@@ -295,15 +321,17 @@ cauta_cuvinte(integ(H, W, L, Vocab), [((R, C), Q, Dir, Id) | L_qs], [(Q, Rasp) |
                                                                                            verif_posibil_rasp(Lung, Vocab, Rasp),
                                                                                            cauta_cuvinte(integ(H, W, L, Vocab), L_qs, Sols), !.
 
-solutii_posibile(integ(H, W, L, Vocab), Sols) :- intrebari(integ(H, W, L, Vocab), L_qs),
-                                                 cauta_cuvinte(integ(H, W, L, Vocab), L_qs, Sols).
+%% analog cu solutii_posibile/2,
+%% numai ca se sorteaza intrebarile dupa lungimea lor
+sortare_solutii_posibile(integ(H, W, L, Vocab), Sols, SL_qs)
+                   :- intrebari(integ(H, W, L, Vocab), L_qs),
+                                      list_q_sort(L_qs, SL_qs),
+                 cauta_cuvinte(integ(H, W, L, Vocab), SL_qs, Sols).
 
-my_sols(integ(H, W, L, Vocab), Sols, SL_qs) :- intrebari(integ(H, W, L, Vocab), L_qs),
-                                              my_q_sort(L_qs, SL_qs),
-                                              cauta_cuvinte(integ(H, W, L, Vocab), SL_qs, Sols).
+%% qsort pentru o lista de intrebari
+list_q_sort(L, S) :- q_sort(L, [], S).
 
-my_q_sort(L, S) :- q_sort(L, [], S).
-
+%% criteriu sortare -> lungimea textului intrebarii
 pivoting(_, [], [], []).
 pivoting(((R, C), Q, Dir, Id), [((Rx, Cx), Qx, Dirx, Idx) | T], [((Rx, Cx), Qx, Dirx, Idx) | L], G) :- atom_chars(Q, CQ),
                                                                                                        atom_chars(Qx, CQx),
@@ -323,11 +351,11 @@ pivoting(((R, C), Q, Dir, Id), [((Rx, Cx), Qx, Dirx, Idx) | T], L, [((Rx, Cx), Q
                                                                                                        LQ > LQx, !,
                                                                                                    
                                                                                                        pivoting(((R, C), Q, Dir, Id), T, L, G).
-% Ref : http://kti.mff.cuni.cz/~bartak/prolog/sorting.html
+% Ref : http://kti.mff.cuni.cz/~bartak/prolog/sorting.html#quick
 q_sort([], Acc, Acc).
 q_sort([((R, C), Q, Dir, Id) | T], Acc, Sorted):- pivoting(((R, C), Q, Dir, Id), T, L1, L2),
-                                                  q_sort(L1, Acc, Sorted1),
-                                                  q_sort(L2, [((R, C), Q, Dir, Id) | Sorted1], Sorted).
+                                                  q_sort(L1, Acc, SortedAux),
+                                                  q_sort(L2, [((R, C), Q, Dir, Id) | SortedAux], Sorted).
 
 % rezolvare/2
 % rezolvare(+Integ, -Solutie)
@@ -338,9 +366,14 @@ q_sort([((R, C), Q, Dir, Id) | T], Acc, Sorted):- pivoting(((R, C), Q, Dir, Id),
 %
 % BONUS: rezolvare nu oferă soluții duplicate - numărul de soluții ale 
 % predicatului este chiar numărul de completări posibile ale integramei.
+rezolvare(W, Solutie) :- sortare_solutii_posibile(W, Solutii, L_qs),                                                 
+                         cauta_solutii(W, Solutii, L_qs, Sol),
+                         findall((Q, R), (member((Q, Rasp), Sol), atom_chars(R, Rasp)), Solutie).
 
+%% verifica daca un raspuns posibil
+%% la o intrebare se potriveste in integrama,
+%% i.e. este compatibil si cu intrebarile din intersectie
 verif_valid_sol(_, _, _, []).
-% verif_valid_sol(Q, X, L_int, [(Q2, X2) | Sol]) :- X == X2, !, fail.
 
 verif_valid_sol(Q, X, L_int, [(Q2, X2) | Sol]) :- member((Q, P1, Q2, P2), L_int), !,
 
@@ -349,31 +382,20 @@ verif_valid_sol(Q, X, L_int, [(Q2, X2) | Sol]) :- member((Q, P1, Q2, P2), L_int)
 
                                                   L1 == L2, verif_valid_sol(Q, X, L_int, Sol).
 
-% verif_valid_sol(Q, X, L_int, [(Q2, X2) | Sol]) :- member((Q2, P2, Q, P1), L_int), !,
-
-%                                                   nth0(P1, X, L1),
-%                                                   nth0(P2, X2, L2),
-
-%                                                   L1 == L2, verif_valid_sol(Q, X, L_int, Sol).
-
 verif_valid_sol(Q, X, L_int, [_ | Sol]) :- verif_valid_sol(Q, X, L_int, Sol).
 
+%% cauta solutiile posibile in functie de
+%% *intersectiile* intrebarilor din integrama
 cauta_solutii(_,[], _, []).
-cauta_solutii(W, [(Q, Rasp) | Solutii], L_qs, [(Q, X) | Curr_Sol]) :- findall((Q, P1, Q2, P2), my_intersect(W, L_qs, Q, P1, Q2, P2), L_int),
-                                                                    cauta_solutii(W, Solutii, L_qs, Curr_Sol),
-                                                                    member(X, Rasp), \+member((_, X), Curr_Sol),
-                                                                    verif_valid_sol(Q, X, L_int, Curr_Sol).
+cauta_solutii(W, [(Q, Rasp) | Solutii], L_qs, [(Q, X) | Curr_Sol]) :- findall((Q, P1, Q2, P2),
+                                                                              intersectie_cu_intrebari(W, L_qs, Q, P1, Q2, P2),
+                                                                              L_int),
 
-rezolvare(W, Solutie) :- my_sols(W, Solutii, L_qs),
+                                                                        cauta_solutii(W, Solutii, L_qs, Curr_Sol),
+                                                                      member(X, Rasp), \+member((_, X), Curr_Sol),
+                                                                           verif_valid_sol(Q, X, L_int, Curr_Sol).
 
-                        %  findall((Q1, P1, Q2, P2), ( % member((_, Q1, d, _), L_qs),
-                        %                             my_intersect(W, L_qs, Q1, P1, Q2, P2)), L_int), % se pot intersecta doar intrebari 
-                        %                                                                             % avand directii diferite
-                                                 
-                         cauta_solutii(W, Solutii, L_qs, Sol),
-                         findall((Q, R), (member((Q, Rasp), Sol), atom_chars(R, Rasp)), Solutie).
-                                                    
-
-%% Helpers
+                                                                           
+%% ----- Testing Helpers -----
 % integrama(0, W), intrebari(W, L_qs), member((_, Q1, d, _), L_qs), intersectie(W, Q1, P1, Q2, P2), Sol = (Q1, P1, Q2, P2).
 % integrama(0, W), intrebari(W, L_qs), findall((Q1, P1, Q2, P2), (member((_, Q1, d, _), L_qs), intersectie(W, Q1, P1, Q2, P2)), L).
